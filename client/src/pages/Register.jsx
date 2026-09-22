@@ -3,7 +3,7 @@ import { FaRegEye } from "react-icons/fa";
 import { FaRegEyeSlash } from 'react-icons/fa6';
 import toast from 'react-hot-toast';
 import Axios from '../utils/Axios';
-import SummaryApi from '../common/summaryApi';
+import SummaryApi from '../common/SummaryApi'
 import AxiosToastError from '../utils/AxiosToastError';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -65,7 +65,7 @@ const Register = () => {
             }
 
         } catch(error){
-            console.log(error.response?.data)   // 🔥 debug add kiya
+            console.log(error.response?.data) 
             AxiosToastError(error)
         }
     }

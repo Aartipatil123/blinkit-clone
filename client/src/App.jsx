@@ -1,112 +1,88 @@
-import { Outlet } from "react-router-dom";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-
-import fetchUserDetails from "./utils/fetchUserDetails";
-import { setUserDetails } from "./store/userSlice";
-import { setAllCategory, setAllSubCategory, setLoadingCategory } from "./store/productSlice";
-
-import Axios from "./utils/Axios";
-import SummaryApi from "./common/SummaryApi";
+import { Outlet, useLocation } from 'react-router-dom'
+import './App.css'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import toast, { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+import fetchUserDetails from './utils/fetchUserDetails';
+import { setUserDetails } from './store/userSlice';
+import { setAllCategory,setAllSubCategory,setLoadingCategory } from './store/productSlice';
+import { useDispatch } from 'react-redux';
+import Axios from './utils/Axios';
+import SummaryApi from './common/SummaryApi';
+import { handleAddItemCart } from './store/cartProduct'
+import GlobalProvider from './provider/GlobalProvider';
+import { FaCartShopping } from "react-icons/fa6";
+import CartMobileLink from './components/CartMobile';
 
 function App() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
+  const location = useLocation()
+  
 
-  // =========================
-  // 🔐 FETCH USER
-  // =========================
-  const fetchUser = async () => {
+  const fetchUser = async()=>{
+      const userData = await fetchUserDetails()
+      dispatch(setUserDetails(userData.data))
+  }
+
+  const fetchCategory = async()=>{
     try {
-      const accessToken = localStorage.getItem("accessToken");
+        dispatch(setLoadingCategory(true))
+        const response = await Axios({
+            ...SummaryApi.getCategory
+        })
+        const { data : responseData } = response
 
-      if (!accessToken) return;
-
-      const userData = await fetchUserDetails();
-
-      if (userData?.success && userData?.data) {
-        dispatch(setUserDetails(userData.data));
-      }
+        if(responseData.success){
+           dispatch(setAllCategory(responseData.data.sort((a, b) => a.name.localeCompare(b.name)))) 
+        }
     } catch (error) {
-      console.log("User Error:", error?.response?.data || error.message);
-    }
-  };
-
-  // =========================
-  // 📦 FETCH CATEGORY
-  // =========================
-  const fetchCategory = async () => {
-    try {
-      dispatch(setLoadingCategory(true))
-      const res = await Axios({
-        ...SummaryApi.getCategory,
-      });
-
-      const { data: responseData } = res;
-
-      if (responseData.success) {
-        dispatch(setAllCategory(responseData.data));
-      }
-    } catch (error) {
-      console.log("Category Error:", error?.response?.data || error.message);
+        
     }finally{
-     dispatch(setLoadingCategory(false))
-  }
-  };
-
-  // =========================
-  // 📦 FETCH SUBCATEGORY
-  // =========================
-  const fetchSubCategory = async () => {
-  try {
-    
-    const res = await Axios({
-      ...SummaryApi.getSubCategory,
-    });
-
-    const { data: responseData } = res;
-
-    // 🔥 YAHAN ADD KARO
-    console.log("SubCategory API Response:", responseData);
-
-    if (responseData.success) {
-      dispatch(setAllSubCategory(responseData.data));
+      dispatch(setLoadingCategory(false))
     }
-
-  } catch (error) {
-    console.log("SubCategory Error:", error?.response?.data || error.message);
   }
-};
 
-  // =========================
-  // 🚀 INITIAL LOAD
-  // =========================
-  useEffect(() => {
-    fetchUser();
-    fetchCategory();
-    fetchSubCategory();
-  }, []);
+  const fetchSubCategory = async()=>{
+    try {
+        const response = await Axios({
+            ...SummaryApi.getSubCategory
+        })
+        const { data : responseData } = response
+
+        if(responseData.success){
+           dispatch(setAllSubCategory(responseData.data.sort((a, b) => a.name.localeCompare(b.name)))) 
+        }
+    } catch (error) {
+        
+    }finally{
+    }
+  }
+
+  
+
+  useEffect(()=>{
+    fetchUser()
+    fetchCategory()
+    fetchSubCategory()
+    // fetchCartItem()
+  },[])
 
   return (
-    <div className="flex flex-col min-h-screen">
-      
-      {/* 🔝 HEADER */}
-      <Header />
-
-      {/* 📄 MAIN CONTENT */}
-      <main className="flex-grow">
-        <Outlet />
+    <GlobalProvider> 
+      <Header/>
+      <main className='min-h-[78vh]'>
+          <Outlet/>
       </main>
-
-      {/* 🔚 FOOTER */}
-      <Footer />
-
-      {/* 🔔 TOAST */}
-      <Toaster position="top-center" />
-    </div>
-  );
+      <Footer/>
+      <Toaster/>
+      {
+        location.pathname !== '/checkout' && (
+          <CartMobileLink/>
+        )
+      }
+    </GlobalProvider>
+  )
 }
 
-export default App;
+export default App

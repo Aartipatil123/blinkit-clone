@@ -1,161 +1,165 @@
-import React, { useState, useEffect, useRef } from 'react';
-import logo from '../assets/logo.png';
-import Search from './Search';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react'
+import logo from '../assets/logo.png'
+import Search from './Search'
+import { Link, useLocation,useNavigate } from 'react-router-dom'
 import { FaRegCircleUser } from "react-icons/fa6";
 import useMobile from '../hooks/useMobile';
-import { TiShoppingCart } from "react-icons/ti";
+import { BsCart4 } from "react-icons/bs";
 import { useSelector } from 'react-redux';
-import { GoTriangleDown, GoTriangleUp } from "react-icons/go";
+import { GoTriangleDown, GoTriangleUp  } from "react-icons/go";
 import UserMenu from './UserMenu';
+import { DisplayPriceInRupees } from '../utils/DisplayPriceInRupees';
+import { useGlobalContext } from '../provider/GlobalProvider';
+import DisplayCartItem from './DisplayCartItem';
 
 const Header = () => {
-  const [isMobile] = useMobile();
-  const navigate = useNavigate();
-
-  const user = useSelector((state) => state?.user);
-
-  // Desktop dropdown only
-  const [openUserMenu, setOpenUserMenu] = useState(false);
-
-  const menuRef = useRef();
-
-  useEffect(() => {
-    console.log("Redux User Data :", user);
-  }, [user]);
-
-  // Outside click → close desktop dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target)
-      ) {
-        setOpenUserMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const redirectToLoginPage = () => {
-    navigate("/login");
-  };
-
-  // ✅ Mobile user handling
-  const handleMobileUser = () => {
-    if (!user?._id) {
-      navigate("/login");
-    } else {
-      // Mobile me dropdown nahi, alag page open hoga
-      navigate("/user-menu");
+    const [ isMobile ] = useMobile()
+    const location = useLocation()
+    const isSearchPage = location.pathname === "/search"
+    const navigate = useNavigate()
+    const user = useSelector((state)=> state?.user)
+    const [openUserMenu,setOpenUserMenu] = useState(false)
+    const cartItem = useSelector(state => state.cartItem.cart)
+    // const [totalPrice,setTotalPrice] = useState(0)
+    // const [totalQty,setTotalQty] = useState(0)
+    const { totalPrice, totalQty} = useGlobalContext()
+    const [openCartSection,setOpenCartSection] = useState(false)
+ 
+    const redirectToLoginPage = ()=>{
+        navigate("/login")
     }
-  };
+
+    const handleCloseUserMenu = ()=>{
+        setOpenUserMenu(false)
+    }
+
+    const handleMobileUser = ()=>{
+        if(!user._id){
+            navigate("/login")
+            return
+        }
+
+        navigate("/user")
+    }
+
+    //total item and total price
+    // useEffect(()=>{
+    //     const qty = cartItem.reduce((preve,curr)=>{
+    //         return preve + curr.quantity
+    //     },0)
+    //     setTotalQty(qty)
+        
+    //     const tPrice = cartItem.reduce((preve,curr)=>{
+    //         return preve + (curr.productId.price * curr.quantity)
+    //     },0)
+    //     setTotalPrice(tPrice)
+
+    // },[cartItem])
 
   return (
-    <header className='shadow-md sticky top-0 bg-white z-50'>
-      <div className='container mx-auto px-4 py-3 flex items-center justify-between gap-4'>
+    <header className='h-24 lg:h-20 lg:shadow-md sticky top-0 z-40 flex flex-col justify-center gap-1 bg-white'>
+        {
+            !(isSearchPage && isMobile) && (
+                <div className='container mx-auto flex items-center px-2 justify-between'>
+                                {/**logo */}
+                                <div className='h-full'>
+                                    <Link to={"/"} className='h-full flex justify-center items-center'>
+                                        <img 
+                                            src={logo}
+                                            width={170}
+                                            height={60}
+                                            alt='logo'
+                                            className='hidden lg:block'
+                                        />
+                                        <img 
+                                            src={logo}
+                                            width={120}
+                                            height={60}
+                                            alt='logo'
+                                            className='lg:hidden'
+                                        />
+                                    </Link>
+                                </div>
 
-        {/* Logo */}
-        <Link to="/" className='flex items-center'>
-          <img
-            src={logo}
-            alt='logo'
-            className='h-10 lg:h-12 object-contain'
-          />
-        </Link>
+                                {/**Search */}
+                                <div className='hidden lg:block'>
+                                    <Search/>
+                                </div>
 
-        {/* Desktop Search */}
-        {!isMobile && (
-          <div className='flex-1 max-w-xl'>
-            <Search />
-          </div>
-        )}
 
-        <div className='flex items-center gap-4'>
+                                {/**login and my cart */}
+                                <div className=''>
+                                    {/**user icons display in only mobile version**/}
+                                    <button className='text-neutral-600 lg:hidden' onClick={handleMobileUser}>
+                                        <FaRegCircleUser size={26}/>
+                                    </button>
 
-          {/* ✅ Mobile User Icon */}
-          <div className='lg:hidden'>
-            <button
-              onClick={handleMobileUser}
-              className='text-neutral-700'
-            >
-              <FaRegCircleUser size={26} />
-            </button>
-          </div>
-
-          {/* Desktop Section */}
-          <div className='hidden lg:flex items-center text-sm font-medium gap-10'>
-
-            {
-              user?._id ? (
-                <div className='relative' ref={menuRef}>
-
-                  {/* Account Button */}
-                  <div
-                    onClick={() => setOpenUserMenu(!openUserMenu)}
-                    className='flex items-center gap-2 cursor-pointer'
-                  >
-                    <p>Account</p>
-
-                    {
-                      openUserMenu ? (
-                        <GoTriangleUp size={20} />
-                      ) : (
-                        <GoTriangleDown size={20} />
-                      )
-                    }
-                  </div>
-
-                  {/* Desktop Dropdown */}
-                  {
-                    openUserMenu && (
-                      <div className='absolute right-0 top-12 z-50'>
-                        <div className='bg-white rounded-lg p-4 min-w-52 shadow-lg border'>
-                          <UserMenu />
-                        </div>
-                      </div>
-                    )
-                  }
-
+                                      {/**Desktop**/}
+                                    <div className='hidden lg:flex  items-center gap-10'>
+                                        {
+                                            user?._id ? (
+                                                <div className='relative'>
+                                                    <div onClick={()=>setOpenUserMenu(preve => !preve)} className='flex select-none items-center gap-1 cursor-pointer'>
+                                                        <p>Account</p>
+                                                        {
+                                                            openUserMenu ? (
+                                                                  <GoTriangleUp size={25}/> 
+                                                            ) : (
+                                                                <GoTriangleDown size={25}/>
+                                                            )
+                                                        }
+                                                       
+                                                    </div>
+                                                    {
+                                                        openUserMenu && (
+                                                            <div className='absolute right-0 top-12'>
+                                                                <div className='bg-white rounded p-4 min-w-52 lg:shadow-lg'>
+                                                                    <UserMenu close={handleCloseUserMenu}/>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    }
+                                                    
+                                                </div>
+                                            ) : (
+                                                <button onClick={redirectToLoginPage} className='text-lg px-2'>Login</button>
+                                            )
+                                        }
+                                        <button onClick={()=>setOpenCartSection(true)} className='flex items-center gap-2 bg-green-800 hover:bg-green-700 px-3 py-2 rounded text-white'>
+                                            {/**add to card icons */}
+                                            <div className='animate-bounce'>
+                                                <BsCart4 size={26}/>
+                                            </div>
+                                            <div className='font-semibold text-sm'>
+                                                {
+                                                    cartItem[0] ? (
+                                                        <div>
+                                                            <p>{totalQty} Items</p>
+                                                            <p>{DisplayPriceInRupees(totalPrice)}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <p>My Cart</p>
+                                                    )
+                                                }
+                                            </div>    
+                                        </button>
+                                    </div>
+                                </div>
                 </div>
-              ) : (
-                <button
-                  onClick={redirectToLoginPage}
-                  className='text-lg px-2 font-semibold'
-                >
-                  Login
-                </button>
-              )
-            }
-
-            {/* Cart Button */}
-            <button className='flex items-center gap-2 bg-green-800 hover:bg-green-700 px-4 py-3 rounded text-white'>
-              <div className='animate-bounce'>
-                <TiShoppingCart size={26} />
-              </div>
-
-              <div>
-                <p>My Cart</p>
-              </div>
-            </button>
-
-          </div>
+            )
+        }
+        
+        <div className='container mx-auto px-2 lg:hidden'>
+            <Search/>
         </div>
-      </div>
 
-      {/* Mobile Search */}
-      {isMobile && (
-        <div className='px-4 pb-3'>
-          <Search />
-        </div>
-      )}
+        {
+            openCartSection && (
+                <DisplayCartItem close={()=>setOpenCartSection(false)}/>
+            )
+        }
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

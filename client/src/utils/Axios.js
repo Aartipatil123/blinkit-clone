@@ -1,94 +1,71 @@
 import axios from "axios";
-import SummaryApi, { baseURL } from "../common/SummaryApi";
+import SummaryApi , { baseURL } from "../common/SummaryApi";
 
 const Axios = axios.create({
-    baseURL: baseURL,
-    withCredentials: true
-});
+    baseURL : baseURL,
+    withCredentials : true
+})
 
-/*
-========================================
-REQUEST INTERCEPTOR
-========================================
-*/
+//sending access token in the header
 Axios.interceptors.request.use(
-    (config) => {
-        const accessToken = localStorage.getItem("accessToken");
+    async(config)=>{
+        const accessToken = localStorage.getItem('accesstoken')
 
-        if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
+        if(accessToken){
+            config.headers.Authorization = `Bearer ${accessToken}`
         }
 
-        return config;
+        return config
     },
-    (error) => Promise.reject(error)
-);
-
-/*
-========================================
-REFRESH ACCESS TOKEN FUNCTION
-========================================
-*/
-const refreshAccessToken = async () => {
-    try {
-        const response = await Axios({
-            ...SummaryApi.refreshToken
-        });
-
-        const newAccessToken = response?.data?.data?.accessToken;
-
-        if (newAccessToken) {
-            localStorage.setItem("accessToken", newAccessToken);
-            return newAccessToken;
-        }
-
-        return null;
-
-    } catch (error) {
-        console.log("Refresh Token Error:", error?.response?.data || error.message);
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-
-        window.location.href = "/login";
-
-        return null;
+    (error)=>{
+        return Promise.reject(error)
     }
-};
+)
 
-/*
-========================================
-RESPONSE INTERCEPTOR
-========================================
-*/
-Axios.interceptors.response.use(
-    (response) => response,
+//extend the life span of access token with 
+// the help refresh
+Axios.interceptors.request.use(
+    (response)=>{
+        return response
+    },
+    async(error)=>{
+        let originRequest = error.config 
 
-    async (error) => {
-        const originalRequest = error.config;
+        if(error.response.status === 401 && !originRequest.retry){
+            originRequest.retry = true
 
-        /*
-        IMPORTANT:
-        refresh-token API khud agar fail ho jaye
-        to infinite loop nahi chalna chahiye
-        */
-        if (
-            error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !originalRequest.url.includes("/refresh-token")
-        ) {
-            originalRequest._retry = true;
+            const refreshToken = localStorage.getItem("refreshToken")
 
-            const newAccessToken = await refreshAccessToken();
+            if(refreshToken){
+                const newAccessToken = await refreshAccessToken(refreshToken)
 
-            if (newAccessToken) {
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return Axios(originalRequest);
+                if(newAccessToken){
+                    originRequest.headers.Authorization = `Bearer ${newAccessToken}`
+                    return Axios(originRequest)
+                }
             }
         }
-
-        return Promise.reject(error);
+        
+        return Promise.reject(error)
     }
-);
+)
 
-export default Axios;
+
+const refreshAccessToken = async(refreshToken)=>{
+    try {
+        const response = await Axios({
+            ...SummaryApi.refreshToken,
+            headers : {
+                Authorization : `Bearer ${refreshToken}`
+            }
+        })
+
+        const accessToken = response.data.data.accessToken
+        localStorage.setItem('accesstoken',accessToken)
+        return accessToken
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+export default Axios

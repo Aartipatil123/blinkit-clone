@@ -1,23 +1,24 @@
 import mongoose from "mongoose";
+
 const orderSchema = new mongoose.Schema({
     userId : {
         type : mongoose.Schema.ObjectId,
         ref : 'User'
     },
-    orderID : {
+    orderId : {
         type : String,
-        required : [true, "Provide orderID"],
+        required : [true, "Provide orderId"],
         unique : true
     },
-    productID : {
+    productId : {
         type : mongoose.Schema.ObjectId,
         ref : "product"
     },
     product_details : {
-       name : String,
-       image : Array,
+        name : String,
+        image : Array,
     },
-    paymentID : {
+    paymentId : {
         type : String,
         default : ""
     },
@@ -26,7 +27,7 @@ const orderSchema = new mongoose.Schema({
         default : ""
     },
     delivery_address : {
-        type : mongoose.Schema,ObjectId,
+        type : mongoose.Schema.ObjectId,
         ref : 'address'
     },
     subTotalAmt : {
@@ -41,9 +42,10 @@ const orderSchema = new mongoose.Schema({
         type : String,
         default : ""
     }
-},
-{
+},{
     timestamps : true
 })
-const OrderModel = mongoose.model('order', orderSchema)
+
+const OrderModel = mongoose.model('order',orderSchema)
+
 export default OrderModel

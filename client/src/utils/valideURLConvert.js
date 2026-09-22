@@ -1,14 +1,4 @@
-export const valideURLConvert = (name) => {
-
-    if (!name) return "";
-
-    const url = name
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replaceAll(" ", "-")
-        .replaceAll(",", "-")
-        .replaceAll("&", "-");
-
-    return url;
-};
+export const valideURLConvert = (name)=>{
+    const url = name?.toString().replaceAll(" ","-").replaceAll(",","-").replaceAll("&","-")
+    return url
+}
