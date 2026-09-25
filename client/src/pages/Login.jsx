@@ -55,11 +55,13 @@ const Login = () => {
         "accessToken",
         response.data.data.accessToken
     )
+    console.log("Access Token Saved:", localStorage.getItem("accessToken"))
 
     localStorage.setItem(
         "refreshToken",
         response.data.data.refreshToken
     )
+    console.log("Refresh Token Saved:", localStorage.getItem("refreshToken"))
 
     const userDetails = await fetchUserDetails()
     dispatch(setUserDetails(userDetails.data))
